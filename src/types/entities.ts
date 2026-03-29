@@ -85,6 +85,7 @@ export interface CostResult {
   return_cost: number; // float
   cost_to_serve: number; // float
   profit: number; // float
+  profit_margin_pct?: number | null; // float
   profitable: boolean;
   calculated_at: string; // timestamp
 }

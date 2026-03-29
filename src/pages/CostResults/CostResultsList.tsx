@@ -4,7 +4,7 @@ import { Box, Alert } from '@mui/material';
 import DataTable, { Column } from '../../components/common/DataTable';
 import { CostResult } from '../../types/entities';
 import { costResultApi } from '../../services/backend';
-import { formatCurrency, formatDateTime } from '../../utils/formatters';
+import { formatCurrency, formatDateTime, formatPercent } from '../../utils/formatters';
 
 const CostResultsList = () => {
   const [results, setResults] = useState<CostResult[]>([]);
@@ -33,7 +33,8 @@ const CostResultsList = () => {
     { id: 'transport_cost', label: 'Transport Cost', minWidth: 120, align: 'right', format: (v) => formatCurrency(v as number) },
     { id: 'warehouse_cost', label: 'Warehouse Cost', minWidth: 120, align: 'right', format: (v) => formatCurrency(v as number) },
     { id: 'cost_to_serve', label: 'Cost to Serve', minWidth: 120, align: 'right', format: (v) => formatCurrency(v as number) },
-    { id: 'profit', label: 'Profit', minWidth: 120, align: 'right', format: (v) => formatCurrency(v as number) },
+    { id: 'profit', label: 'Gross Margin', minWidth: 120, align: 'right', format: (v) => formatCurrency(v as number) },
+    { id: 'profit_margin_pct', label: 'Margin %', minWidth: 120, align: 'right', format: (v) => v != null ? formatPercent(v as number) : '' },
     { id: 'profitable', label: 'Profitable', minWidth: 100, format: (v) => (v ? 'Yes' : 'No') },
     { id: 'calculated_at', label: 'Calculated', minWidth: 150, format: (v) => formatDateTime((v as string) || '') },
   ];

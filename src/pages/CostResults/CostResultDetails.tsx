@@ -4,7 +4,7 @@ import { Box, Paper, Typography, Button, Grid, Chip, Alert } from '@mui/material
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { CostResult } from '../../types/entities';
 import { costResultApi } from '../../services/backend';
-import { formatCurrency, formatDateTime } from '../../utils/formatters';
+import { formatCurrency, formatDateTime, formatPercent } from '../../utils/formatters';
 
 const CostResultDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -78,8 +78,12 @@ const CostResultDetails = () => {
             <Typography variant="body1" className="mb-4">{formatCurrency(result.cost_to_serve)}</Typography>
           </Grid>
           <Grid item xs={12} md={6}>
-            <Typography variant="subtitle2" className="text-gray-500 mb-1">Profit</Typography>
+            <Typography variant="subtitle2" className="text-gray-500 mb-1">Gross Margin</Typography>
             <Typography variant="body1" className="mb-4">{formatCurrency(result.profit)}</Typography>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Typography variant="subtitle2" className="text-gray-500 mb-1">Margin %</Typography>
+            <Typography variant="body1" className="mb-4">{result.profit_margin_pct != null ? formatPercent(result.profit_margin_pct) : 'N/A'}</Typography>
           </Grid>
           {result.calculated_at && (
             <Grid item xs={12}>
