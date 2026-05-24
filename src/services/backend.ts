@@ -3,8 +3,9 @@
  * - Auth: register (email+password), login, getMe
  * - Entities: GET list + GET by id only (no create/update/delete; data via Excel upload)
  * - Upload: POST /api/upload/excel, DELETE /api/upload/excel-data
- * - Calculate: POST cost-to-serve, drop-size, all
+ * - Calculate: POST cost-to-serve, drop-size, all (upload also auto-runs all)
  * - Export: GET CSV endpoints
+ * - Reports: GET CSV report endpoints
  */
 import { api, unwrap } from './api';
 import type {
@@ -92,12 +93,37 @@ export const dropSizeResultApi = {
 };
 
 // --- Upload ---
+export interface CalculationSummary {
+  calculated: number;
+}
+
 export interface UploadExcelResult {
   imported: { warehouse_costs: number; transport_costs: number; orders: number };
   parsed_counts?: { warehouse_costs: number; transport_costs: number; orders: number };
+  calculations?: {
+    dropSize?: CalculationSummary;
+    costToServe?: CalculationSummary;
+  };
   errors?: Array<{ sheet?: string; message?: string }>;
 }
 type DeletedCounts = Record<string, number>;
+
+function toCalculationSummary(
+  value: { calculated?: number } | undefined
+): CalculationSummary | undefined {
+  if (value?.calculated == null) return undefined;
+  return { calculated: value.calculated };
+}
+
+function normalizeUploadCalculations(
+  calc: Record<string, { calculated?: number } | undefined> | undefined
+): UploadExcelResult['calculations'] {
+  if (!calc) return undefined;
+  const dropSize = toCalculationSummary(calc.dropSize ?? calc.drop_size);
+  const costToServe = toCalculationSummary(calc.costToServe ?? calc.cost_to_serve);
+  if (!dropSize && !costToServe) return undefined;
+  return { dropSize, costToServe };
+}
 
 export const uploadApi = {
   uploadExcel: (file: File): Promise<UploadExcelResult> => {
@@ -112,7 +138,11 @@ export const uploadApi = {
       .then((r) => {
         const body = r.data;
         if (body?.data) {
-          return { ...body.data, errors: body.errors };
+          const data = body.data;
+          const calculations = normalizeUploadCalculations(
+            data.calculations as Record<string, { calculated?: number } | undefined> | undefined
+          );
+          return { ...data, calculations, errors: body.errors };
         }
         throw new Error(body?.message || 'Upload failed');
       });
@@ -132,6 +162,40 @@ export const calculateApi = {
     api.post('/calculate/drop-size').then((r) => unwrap(r) as { calculated: number }),
   runAll: (): Promise<{ cost_to_serve: { calculated: number }; drop_size: { calculated: number } }> =>
     api.post('/calculate/all').then((r) => unwrap(r) as { cost_to_serve: { calculated: number }; drop_size: { calculated: number } }),
+};
+
+// --- Reports (CSV download, auth via api interceptor) ---
+export const REPORT_SLUGS = [
+  'customer-summary',
+  'sku-summary',
+  'route-summary',
+  'shipment-validation',
+  'unprofitable-customers',
+  'low-drop-size-customers',
+  'high-cost-skus',
+  'margin-leakage',
+  'top-10-opportunities',
+] as const;
+
+export type ReportSlug = (typeof REPORT_SLUGS)[number];
+
+export const REPORT_LABELS: Record<ReportSlug, string> = {
+  'customer-summary': 'Customer summary',
+  'sku-summary': 'SKU summary',
+  'route-summary': 'Route summary',
+  'shipment-validation': 'Shipment validation',
+  'unprofitable-customers': 'Unprofitable customers',
+  'low-drop-size-customers': 'Low drop-size customers',
+  'high-cost-skus': 'High-cost SKUs',
+  'margin-leakage': 'Margin leakage',
+  'top-10-opportunities': 'Top 10 opportunities',
+};
+
+export const reportApi = {
+  fetchCsv: (slug: ReportSlug): Promise<string> =>
+    api.get(`/reports/${slug}`, { responseType: 'text' }).then((r) => r.data as string),
+  downloadBlob: (slug: ReportSlug): Promise<Blob> =>
+    api.get(`/reports/${slug}`, { responseType: 'blob' }).then((r) => r.data as Blob),
 };
 
 // --- Export (CSV download) ---

@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { api, unwrap } from './api';
 import type { User } from '../types/entities';
 
@@ -29,10 +30,19 @@ export async function login(credentials: LoginCredentials): Promise<LoginRespons
 
 /** Register with email + password. Backend creates an org and returns token; we return the same shape as login for auto-login. */
 export async function register(data: RegisterData): Promise<LoginResponse> {
-  const res = await api.post<{ success: boolean; data: { token: string; user: User } }>('/auth/register', data);
-  const payload = unwrap(res) as { token: string; user: User };
-  if (!payload.token || !payload.user) throw new Error('Registration failed');
-  return { ...payload, success: true };
+  try {
+    const res = await api.post<{ success: boolean; data: { token: string; user: User } }>('/auth/register', data);
+    const payload = unwrap(res) as { token: string; user: User };
+    if (!payload.token || !payload.user) throw new Error('Registration failed');
+    return { ...payload, success: true };
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err) && err.response?.status === 400) {
+      const body = err.response.data as { message?: string; error?: string } | undefined;
+      const msg = body?.message ?? body?.error;
+      if (msg) throw new Error(msg);
+    }
+    throw err;
+  }
 }
 
 export async function getMe(): Promise<User> {

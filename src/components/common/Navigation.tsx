@@ -27,6 +27,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import LogoutIcon from '@mui/icons-material/Logout';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import SummarizeIcon from '@mui/icons-material/Summarize';
 
 const drawerWidth = 256;
 
@@ -39,6 +40,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Dashboard', path: '/', icon: <DashboardIcon /> },
   { label: 'Import data', path: '/upload', icon: <CloudUploadIcon /> },
+  { label: 'Reports', path: '/reports', icon: <SummarizeIcon /> },
   { label: 'Organizations', path: '/organizations', icon: <BusinessIcon /> },
   { label: 'Users', path: '/users', icon: <PersonIcon /> },
   { label: 'Customers', path: '/customers', icon: <PeopleIcon /> },
@@ -84,17 +86,27 @@ const Navigation = () => {
         {navItems.map((item) => (
           <ListItem key={item.path} disablePadding>
             <ListItemButton
-              selected={location.pathname === item.path}
+              selected={
+                item.path === '/'
+                  ? location.pathname === '/'
+                  : location.pathname === item.path || location.pathname.startsWith(`${item.path}/`)
+              }
               onClick={() => handleNavigation(item.path)}
               className={`${
-                location.pathname === item.path
+                (item.path === '/'
+                  ? location.pathname === '/'
+                  : location.pathname === item.path || location.pathname.startsWith(`${item.path}/`))
                   ? 'bg-primary-50 text-primary-600 border-r-4 border-primary-500'
                   : 'hover:bg-gray-100'
               }`}
             >
               <ListItemIcon
                 className={
-                  location.pathname === item.path ? 'text-primary-600' : 'text-gray-600'
+                  (item.path === '/'
+                    ? location.pathname === '/'
+                    : location.pathname === item.path || location.pathname.startsWith(`${item.path}/`))
+                    ? 'text-primary-600'
+                    : 'text-gray-600'
                 }
               >
                 {item.icon}

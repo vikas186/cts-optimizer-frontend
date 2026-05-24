@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Upload from './pages/Upload';
+import { Reports } from './pages/Reports';
 
 // Organizations
 import { OrganizationsList, OrganizationDetails } from './pages/Organizations';
@@ -63,6 +64,7 @@ function App() {
                     <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/upload" element={<Upload />} />
+            <Route path="/reports" element={<Reports />} />
             
             {/* Organizations */}
             <Route path="/organizations" element={<OrganizationsList />} />

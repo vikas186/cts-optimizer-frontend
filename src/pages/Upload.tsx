@@ -9,7 +9,11 @@ const Upload = () => {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [result, setResult] = useState<{ imported: { warehouse_costs: number; transport_costs: number; orders: number }; errors?: Array<{ sheet?: string; message?: string }> } | null>(null);
+  const [result, setResult] = useState<{
+    imported: { warehouse_costs: number; transport_costs: number; orders: number };
+    calculations?: { dropSize?: { calculated: number }; costToServe?: { calculated: number } };
+    errors?: Array<{ sheet?: string; message?: string }>;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -32,10 +36,17 @@ const Upload = () => {
     setResult(null);
     try {
       const data = await uploadApi.uploadExcel(file);
-      setResult({ imported: data.imported });
+      setResult({ imported: data.imported, calculations: data.calculations });
       setFile(null);
       if (inputRef.current) inputRef.current.value = '';
-      toast.success(`Imported: ${data.imported.warehouse_costs} warehouse costs, ${data.imported.transport_costs} transport costs, ${data.imported.orders} orders.`);
+      const calc = data.calculations;
+      const calcNote =
+        calc?.dropSize || calc?.costToServe
+          ? ` Calculated: ${calc.costToServe?.calculated ?? '—'} cost-to-serve, ${calc.dropSize?.calculated ?? '—'} drop-size.`
+          : '';
+      toast.success(
+        `Imported: ${data.imported.warehouse_costs} warehouse costs, ${data.imported.transport_costs} transport costs, ${data.imported.orders} orders.${calcNote}`
+      );
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Upload failed';
       setError(msg);
@@ -100,6 +111,13 @@ const Upload = () => {
         {result && (
           <Alert severity="info" className="mt-4">
             Imported: {result.imported.warehouse_costs} warehouse costs, {result.imported.transport_costs} transport costs, {result.imported.orders} orders.
+            {result.calculations?.costToServe != null || result.calculations?.dropSize != null ? (
+              <>
+                {' '}
+                Auto-calculated: {result.calculations.costToServe?.calculated ?? '—'} cost-to-serve,{' '}
+                {result.calculations.dropSize?.calculated ?? '—'} drop-size orders.
+              </>
+            ) : null}
             {result.errors?.length ? ` Errors: ${result.errors.map((e) => e.message || e.sheet).join('; ')}` : ''}
           </Alert>
         )}
